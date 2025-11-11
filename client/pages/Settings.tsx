@@ -54,6 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { API_BASE, joinApi } from "@/lib/api";
 
 interface SystemSettings {
   companyName: string;
@@ -207,7 +208,7 @@ export default function Settings() {
   const fetchCategories = async () => {
     try {
       setIsLoadingCategories(true);
-      const response = await fetch("http://localhost:5002/api/categories", {
+      const response = await fetch(joinApi("categories"), {
         headers: {
           "Content-Type": "application/json",
           ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
@@ -247,8 +248,8 @@ export default function Settings() {
     try {
       const method = editingCategoryId ? "PUT" : "POST";
       const url = editingCategoryId
-        ? `http://localhost:5002/api/categories/${editingCategoryId}`
-        : "http://localhost:5002/api/categories";
+        ? joinApi(`categories/${editingCategoryId}`)
+        : joinApi("categories");
 
       const response = await fetch(url, {
         method,
@@ -300,16 +301,13 @@ export default function Settings() {
 
   const deleteCategory = async (categoryId: string) => {
     try {
-      const response = await fetch(
-        `http://localhost:5002/api/categories/${categoryId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-          },
+      const response = await fetch(joinApi(`categories/${categoryId}`), {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         },
-      );
+      });
 
       if (!response.ok) {
         throw new Error("Failed to delete category");

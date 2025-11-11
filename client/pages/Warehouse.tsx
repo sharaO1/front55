@@ -609,7 +609,9 @@ export default function Warehouse() {
   const [supplierInput, setSupplierInput] = useState<string>("");
   const [editSupplierInput, setEditSupplierInput] = useState<string>("");
   const [skuBuffer, setSkuBuffer] = useState<string>("");
+  const [showAlertCards, setShowAlertCards] = useState(true);
   const skuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
   const accessToken = useAuthStore((s) => s.accessToken);
   const authUser = useAuthStore((s) => s.user);
@@ -1478,6 +1480,22 @@ export default function Warehouse() {
       }
     };
   }, [products, skuBuffer, toast, t]);
+
+  // Handle scroll to hide alert cards (only hide, don't show again until top)
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Only show cards if at the very top (scrollY < 10)
+      // Once hidden by scrolling, cards stay hidden
+      setShowAlertCards(currentScrollY < 10);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
@@ -2908,91 +2926,97 @@ export default function Warehouse() {
       </Dialog>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("warehouse.total_products")}
-            </CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{products.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {
-                products.filter(
-                  (p) =>
-                    calculateStatus(getVisibleQuantity(p), p.minStock) ===
-                    "in-stock",
-                ).length
-              }{" "}
-              {t("warehouse.in_stock")}
-            </p>
-          </CardContent>
-        </Card>
+      <div
+        className={`transition-all duration-300 overflow-hidden ${
+          showAlertCards ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("warehouse.total_products")}
+              </CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{products.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {
+                  products.filter(
+                    (p) =>
+                      calculateStatus(getVisibleQuantity(p), p.minStock) ===
+                      "in-stock",
+                  ).length
+                }{" "}
+                {t("warehouse.in_stock")}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("warehouse.low_stock_alerts")}
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {
-                products.filter(
-                  (p) =>
-                    calculateStatus(getVisibleQuantity(p), p.minStock) ===
-                    "low-stock",
-                ).length
-              }
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("warehouse.need_immediate_attention")}
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("warehouse.low_stock_alerts")}
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">
+                {
+                  products.filter(
+                    (p) =>
+                      calculateStatus(getVisibleQuantity(p), p.minStock) ===
+                      "low-stock",
+                  ).length
+                }
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("warehouse.need_immediate_attention")}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("warehouse.out_of_stock")}
-            </CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {
-                products.filter(
-                  (p) =>
-                    calculateStatus(getVisibleQuantity(p), p.minStock) ===
-                    "out-of-stock",
-                ).length
-              }
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("warehouse.require_restocking")}
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("warehouse.out_of_stock")}
+              </CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {
+                  products.filter(
+                    (p) =>
+                      calculateStatus(getVisibleQuantity(p), p.minStock) ===
+                      "out-of-stock",
+                  ).length
+                }
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("warehouse.require_restocking")}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("warehouse.expired")}
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {products.filter((p) => isProductExpired(p.expiryDate)).length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t("warehouse.expired_products")}
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t("warehouse.expired")}
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {products.filter((p) => isProductExpired(p.expiryDate)).length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("warehouse.expired_products")}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <Tabs defaultValue="inventory" className="space-y-4">

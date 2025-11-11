@@ -32,6 +32,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { useChatStore, ChatMessage, EMPTY_MESSAGES } from "@/stores/chatStore";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { API_BASE, joinApi } from "@/lib/api";
 
 function formatMessage(t: string): string {
   if (!t) return "";
@@ -182,21 +183,8 @@ function getInitials(name?: string | null, email?: string | null) {
   return source.slice(0, 2).toUpperCase();
 }
 
-const ENV_URL = (import.meta as any)?.env?.VITE_CHAT_API_URL as
-  | string
-  | undefined;
 const getCandidateApiUrls = () => {
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : undefined;
-  const list = [
-    ENV_URL?.trim(),
-    "/chat",
-    "/api/chat",
-    origin ? `${origin}/chat` : undefined,
-    origin ? `${origin}/api/chat` : undefined,
-    "http://localhost:5002/api/chat",
-  ].filter(Boolean) as string[];
-  return Array.from(new Set(list));
+  return [joinApi("chat")];
 };
 
 const getCandidateResetUrls = () =>
@@ -832,7 +820,7 @@ export default function AIChat({
                       onChange={handleInputChange}
                       onKeyDown={onKeyDown}
                       placeholder="Type your message…"
-                      className="min-h-[48px] max-h-[200px] rounded-xl py-3 px-4 shadow-sm resize-none border-2 border-primary bg-white dark:bg-gray-900"
+                      className="min-h-[48px] max-h-[200px] rounded-xl py-3 px-4 shadow-sm resize-none border-2 border-primary bg-white dark:bg-gray-900 text-base"
                       disabled={isSending || isTyping}
                       rows={1}
                     />
